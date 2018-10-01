@@ -18,13 +18,10 @@ int main (int argc, char * argv[]){
   //printf("%d and %d and %d \n", nbr_threads, size_matrix, pol_degree);
   float complex a,b,d;
   //a = newtons_method(10+20*I);
-  a = 10 + 20*I;
-  int c = cabs(a);
-  printf("\n\nRe: %.2f Im: %.2fi\n abs value of a %d\n", creal(a), cimag(a), c);
+  a = 2 + 0.1*I;
+  printf("\n\nRe: %.2f Im: %.2fi\n\n", creal(a), cimag(a));
 
-  b= multiplication_complex(a, 3);
-  printf("Re %f, Im %f \n", creal(b), cimag(b));
-  d = newtons_method(a, 3);
+  d = newtons_method(a, 7);
   return 0;
 }
 
@@ -71,29 +68,44 @@ int check_third_input(char * argv[]) {
 
 float complex multiplication_complex(float complex complex_nbr, int pol_degree){
   float complex tmp_complex = complex_nbr;
-  printf("\n\nInside function. Re: %f and Im: %f\n\n", creal(complex_nbr), cimag(complex_nbr));
+  //printf("\n\nInside function. Re: %f and Im: %f\n\n", creal(complex_nbr), cimag(complex_nbr));
   for (int ix=2; ix <=pol_degree; ++ix){
     complex_nbr = complex_nbr*tmp_complex;
+  }
+  if (pol_degree ==1){
+    complex_nbr = 1;
   }
   return complex_nbr;
 }
 
 float complex newtons_method(float complex complex_nbr, int pol_degree) {
-  float i = 0.001;
+  float i = 0.00001;
+  float complex polynomial_derivative;
   float complex polynomial;
   long divergence_stop = 1e10;
   while (1 ) {
     polynomial = multiplication_complex(complex_nbr, pol_degree);
-    complex_nbr = complex_nbr - complex_nbr/(pol_degree-1)+1/((pol_degree-1)*polynomial);
-    if (  cabs(creal(complex_nbr)) > divergence_stop ||  cabs(cimag(complex_nbr)) > divergence_stop){
+    polynomial_derivative = multiplication_complex(complex_nbr, pol_degree-1);
+    complex_nbr = complex_nbr - complex_nbr/(pol_degree-1)+1/((pol_degree-1)*polynomial_derivative);
+    if (cabs(creal(complex_nbr)) > divergence_stop ||  cabs(cimag(complex_nbr)) > divergence_stop){
       printf("Not converging\n");
       return complex_nbr;
       break;
     }
-    //if ( cabs(complex_nbr) < i) {
-    //  printf("Too close to origin");
-    //  break;
-    // }
+    
+    if (cabs(creal(complex_nbr)) < i && cabs(cimag(complex_nbr)) < i) {
+      printf("Too close to origin. Re %f, Im %f\n", creal(complex_nbr), cimag(complex_nbr));
+      break;
+     }
+    float kkk = cabs(creal(polynomial)+cimag(polynomial))-1;
+    printf("%f, %f \n\n", kkk);
+    if ( cabs(creal(polynomial))-1 < i && cabs(cimag(polynomial)) < i) {
+
+      printf("Roots in (%f,%fi)", creal(complex_nbr), cimag(complex_nbr));
+      break;
+    }
+    printf("value (%f,%fi)\n ", creal(complex_nbr), cimag(complex_nbr));
+      
   }
   return complex_nbr;
 }
