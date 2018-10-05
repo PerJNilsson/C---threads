@@ -34,15 +34,13 @@ void *newton_thread(void *arg){
   float sm = size_matrix1;
   complex float ** answer_matrix1 = arg_s->answer_matrix;
   long **count_matrix1= arg_s->count_matrix;
-  printf("inside threads size matrix %d\n", size_matrix1);
-  printf("startp: %d, endp %d\n", start_point1, end_point1);
+
   for (int i= start_point1; i<end_point1; i++){
     for (int j=0; j<size_matrix1; j++){
       float re_input = (4.0*i/sm-2.0);
       float im_input = (4.0*j/sm-2.0);
       complex float cpx_input = re_input + im_input*I; 
       answer_matrix1[i][j] = newtons_method(cpx_input, pol_degree1, count_matrix1, i, j);
-      //printf("ans: %f,%fi and i=%d j=%d\n", creal(answer_matrix1[i][j]), cimag(answer_matrix1[i][j]), i,j);
     }
   }
   printf("Thread done\n");
@@ -83,18 +81,6 @@ int main (int argc, char * argv[]){
   int start_points[nbr_threads];
   // Creating the strucs args pointer for thread funtion
   struct arg_pointer args[nbr_threads];
-  /*args.pol_degree = pol_degree;
-  args.count_matrix = count_matrix;
-  args.answer_matrix = answer_matrix;
-  args.size_matrix = size_matrix;
-  */  
-//args.end_point =100;//i*nbr_calc_thread;
-  //args.start_point= 0;//(i-1)*nbr_calc_thread;
-  //struct arg_pointer args2[nbr_threads];
-  //int * tmp_vector = (int*) malloc(sizeof(int) * nbr_threads);
-  //int * tmp_vector2 = (int*) malloc(sizeof(int) * nbr_threads);
-  //args.end_point = tmp_vector;
-  //args.start_point = tmp_vector2;
 
   // Creating threads for faster computations
   pthread_t tid[nbr_threads];
@@ -114,16 +100,18 @@ int main (int argc, char * argv[]){
     if ( i+1 == nbr_threads) {
       args[i].end_point=(i+1)*nbr_calc_thread-1+size_matrix%nbr_threads;
     }
-    //printf("end %d, start %d", args.end_point, args.start_point);
     pthread_create(&tid[i], &attr, newton_thread, &args[i]);
   }
+  
+  for (int i=0; i<nbr_threads; i++){
+    pthread_join(tid[i], NULL);
+  }
+
   
   FILE * fp = fopen(file_name,"wb");
   (void) fprintf(fp, "P6\n%d %d\n255\n", size_matrix, size_matrix);
   for (size_t ix=0; ix<size_matrix; ++ix){
     for (size_t jx=0; jx<size_matrix; ++jx){
-      //float complex d;
-      //d = newtons_method(cpx_vector[ix]+cpx_vector[jx]*I, pol_degree, count_matrix, ix, jx);
       static unsigned char color[3];
       color[0] = cabs((1-creal(answer_matrix[ix][jx]))/2.0) * 250.0;
       color[1] = cabs((1-cimag(answer_matrix[ix][jx]))/2.0) * 250.0;
@@ -133,12 +121,10 @@ int main (int argc, char * argv[]){
   }
   (void)fclose(fp);
 
-  for (int i=0; i<nbr_threads; i++){
-    pthread_join(tid[i], NULL);
-  }
   
   return 0;
 }
+// Function below
 
 int check_first_input(char * argv[]) {
   char * input1 = argv[1];
@@ -202,7 +188,7 @@ float complex newtons_method(float complex complex_nbr, int pol_degree, long **m
   float complex polynomial;
   float divergence_stop = 10000000000;
   long nbr_iter_tmp = 0;
-  while (1) {
+  while (nbr_iter_tmp<50000) {
     nbr_iter_tmp +=1;
     polynomial_derivative = multiplication_complex(complex_nbr, pol_degree-1);
 
