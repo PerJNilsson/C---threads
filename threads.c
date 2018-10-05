@@ -29,19 +29,23 @@ void *newton_thread(void *arg){
   struct arg_pointer *arg_s = (struct arg_pointer *)arg;
   int size_matrix1 = arg_s->size_matrix;
   int end_point1 = arg_s->end_point;
+  int start_point1 = arg_s->start_point;
   int pol_degree1 = arg_s->pol_degree;
   float sm = size_matrix1;
-  int start_point1 = arg_s->start_point;
   complex float ** answer_matrix1 = arg_s->answer_matrix;
   long **count_matrix1= arg_s->count_matrix;
-  for (int i= start_point1; i<=end_point1; i++){
+  printf("inside threads size matrix %d\n", size_matrix1);
+  printf("startp: %d, endp %d\n", start_point1, end_point1);
+  for (int i= start_point1; i<end_point1; i++){
     for (int j=0; j<size_matrix1; j++){
       float re_input = (4.0*i/sm-2.0);
       float im_input = (4.0*j/sm-2.0);
       complex float cpx_input = re_input + im_input*I; 
       answer_matrix1[i][j] = newtons_method(cpx_input, pol_degree1, count_matrix1, i, j);
+      //printf("ans: %f,%fi and i=%d j=%d\n", creal(answer_matrix1[i][j]), cimag(answer_matrix1[i][j]), i,j);
     }
   }
+  printf("Thread done\n");
   pthread_exit(0);
 }
 
@@ -74,38 +78,56 @@ int main (int argc, char * argv[]){
   strcat(file_name, fn1); strcat(file_name2, fn1);
 
   // To do here, count start and endpoints
-  
+  int rest = size_matrix % nbr_threads;
+  printf("%d\n", size_matrix/nbr_threads);
+  int start_points[nbr_threads];
   // Creating the strucs args pointer for thread funtion
-  struct arg_pointer args;
-  args.start_point = 0;
-  args.end_point = size_matrix;
-  args.pol_degree = pol_degree;
+  struct arg_pointer args[nbr_threads];
+  /*args.pol_degree = pol_degree;
   args.count_matrix = count_matrix;
   args.answer_matrix = answer_matrix;
   args.size_matrix = size_matrix;
+  */  
+//args.end_point =100;//i*nbr_calc_thread;
+  //args.start_point= 0;//(i-1)*nbr_calc_thread;
+  //struct arg_pointer args2[nbr_threads];
+  //int * tmp_vector = (int*) malloc(sizeof(int) * nbr_threads);
+  //int * tmp_vector2 = (int*) malloc(sizeof(int) * nbr_threads);
+  //args.end_point = tmp_vector;
+  //args.start_point = tmp_vector2;
 
   // Creating threads for faster computations
   pthread_t tid[nbr_threads];
   pthread_attr_t attr;
   pthread_attr_init(&attr);
-  for (int i=0; i<nbr_threads; i++){
 
-    pthread_create(&tid[i], &attr, newton_thread, &args);
+  int nbr_calc_thread = size_matrix/nbr_threads;
+  printf("nbr_calc_thread %d\n", nbr_calc_thread);
+  for (int i=0; i<nbr_threads; i++){
+    args[i].pol_degree = pol_degree;
+    args[i].count_matrix = count_matrix;
+    args[i].answer_matrix = answer_matrix;
+    args[i].size_matrix = size_matrix;
+  
+    args[i].start_point=i*nbr_calc_thread;
+    args[i].end_point=(i+1)*nbr_calc_thread-1;
+    if ( i+1 == nbr_threads) {
+      args[i].end_point=(i+1)*nbr_calc_thread-1+size_matrix%nbr_threads;
+    }
+    //printf("end %d, start %d", args.end_point, args.start_point);
+    pthread_create(&tid[i], &attr, newton_thread, &args[i]);
   }
-  // TODO: arguments to pretty much newton.
   
   FILE * fp = fopen(file_name,"wb");
   (void) fprintf(fp, "P6\n%d %d\n255\n", size_matrix, size_matrix);
-  generate_cpx_numbers(cpx_vector, size_matrix);
   for (size_t ix=0; ix<size_matrix; ++ix){
     for (size_t jx=0; jx<size_matrix; ++jx){
-      float complex d;
-      //long *check;
-      d = newtons_method(cpx_vector[ix]+cpx_vector[jx]*I, pol_degree, count_matrix, ix, jx);
+      //float complex d;
+      //d = newtons_method(cpx_vector[ix]+cpx_vector[jx]*I, pol_degree, count_matrix, ix, jx);
       static unsigned char color[3];
-      color[0] = cabs((1-creal(d))/2.0) * 250.0;
-      color[1] = cabs((1-cimag(d))/2.0) * 250.0;
-      color[2] = cabs((creal(d)+cimag(d))/2.0) *250.0;
+      color[0] = cabs((1-creal(answer_matrix[ix][jx]))/2.0) * 250.0;
+      color[1] = cabs((1-cimag(answer_matrix[ix][jx]))/2.0) * 250.0;
+      color[2] = cabs((creal(answer_matrix[ix][jx])+cimag(answer_matrix[ix][jx]))/2.0) *250.0;
       (void) fwrite(color, 1, 3, fp);	
       }
   }
@@ -114,7 +136,7 @@ int main (int argc, char * argv[]){
   for (int i=0; i<nbr_threads; i++){
     pthread_join(tid[i], NULL);
   }
-
+  
   return 0;
 }
 
