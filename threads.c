@@ -7,10 +7,10 @@
 #include <complex.h>
 #include <math.h>
 
-int check_first_input(char *argv[]); int check_second_input(char *argv[]); int check_third_input(char *argv[]);
-float complex newtons_method(float complex, int pol_degree, long ** matrix_pp, int a, int b);
-float complex multiplication_complex(float complex complex_nbr, int pol_degree);
-void generate_cpx_numbers(float * allocated_vector, int size_matrix);
+void check_first_input(char *argv[]); void check_second_input(char *argv[]); void check_third_input(char *argv[]);
+double complex newtons_method(double complex, int pol_degree, long ** matrix_pp, int a, int b);
+double complex multiplication_complex(double complex complex_nbr, int pol_degree);
+void generate_cpx_numbers(double * allocated_vector, int size_matrix);
 
 
 // creating an arg pointer
@@ -19,9 +19,19 @@ struct arg_pointer {
   int end_point;
   int pol_degree;
   long ** count_matrix;
-  complex float ** answer_matrix;
+  complex double ** answer_matrix;
   int size_matrix;
-  float sm;
+  double sm;
+  int * checkJobDone;
+};
+
+struct arg_for_printer {
+  int * checkJobDone;
+  char file_name[32];
+  char file_name2[32];
+  long ** count_matrix;
+  complex double ** answer_matrix;
+  int size_matrix;
 };
 
 // Creating the function for the pthreads
@@ -31,74 +41,125 @@ void *newton_thread(void *arg){
   int end_point1 = arg_s->end_point;
   int start_point1 = arg_s->start_point;
   int pol_degree1 = arg_s->pol_degree;
-  float sm = size_matrix1;
-  complex float ** answer_matrix1 = arg_s->answer_matrix;
+  double sm = size_matrix1;
   long **count_matrix1= arg_s->count_matrix;
 
-  for (int i= start_point1; i<end_point1; i++){
-    for (int j=0; j<size_matrix1; j++){
-      float re_input = (4.0*i/sm-2.0);
-      float im_input = (4.0*j/sm-2.0);
-      complex float cpx_input = re_input + im_input*I; 
-      answer_matrix1[i][j] = newtons_method(cpx_input, pol_degree1, count_matrix1, i, j);
+  for (int i= start_point1; i<=end_point1; i++){
+    for (int j=0; j<size_matrix1; j+=4){
+      complex double cpx_input = (4.0*i/sm-2.0) + (4.0*j/sm-2.0)*I; 
+      arg_s->answer_matrix[i][j] = newtons_method(cpx_input, pol_degree1, count_matrix1, i, j);
+
+      complex double cpx_input1 = (4.0*i/sm-2.0) + (4.0*(j+1)/sm-2.0)*I; 
+      arg_s->answer_matrix[i][j+1] = newtons_method(cpx_input1, pol_degree1, count_matrix1, i, j+1);
+
+      complex double cpx_input2 = (4.0*i/sm-2.0) + (4.0*(j+2)/sm-2.0)*I; 
+      arg_s->answer_matrix[i][j+2] = newtons_method(cpx_input2, pol_degree1, count_matrix1, i, j+2);
+
+      complex double cpx_input3 = (4.0*i/sm-2.0) + (4.0*(j+3)/sm-2.0)*I; 
+      arg_s->answer_matrix[i][j+3] = newtons_method(cpx_input3, pol_degree1, count_matrix1, i, j+3);
+   
     }
+    arg_s->checkJobDone[i]=1;
   }
-  printf("Thread done\n");
   pthread_exit(0);
 }
+ 
+void *write_to_file(void *argP){
+  struct arg_for_printer*arg_p = argP;
+  int iCounter = 0;
+
+  FILE * fp = fopen(arg_p->file_name,"wb");
+  fprintf(fp, "P6\n%d %d\n255\n", arg_p->size_matrix, arg_p->size_matrix);
+
+   FILE * fp2 = fopen(arg_p->file_name2,"wb");
+   fprintf(fp2, "P6\n%d %d\n255\n", arg_p->size_matrix, arg_p->size_matrix);
+     
+  while(iCounter < arg_p->size_matrix){
+    if (arg_p->checkJobDone[iCounter] == 1) {
+      for (size_t ix=0; ix<arg_p->size_matrix; ++ix){
+	static unsigned char color[3];
+	color[0] = cabs((1-creal(arg_p->answer_matrix[iCounter][ix]))/2.0) * 250.0;
+	color[1] = cabs((1-cimag(arg_p->answer_matrix[iCounter][ix]))/2.0) * 250.0;
+	color[2] = cabs((creal(arg_p->answer_matrix[iCounter][ix])+cimag(arg_p->answer_matrix[iCounter][ix]))/2.0) *250.0;
+	fwrite(color, 1, 3, fp);	
+      }
+     
+      for (size_t ix=0; ix<arg_p->size_matrix; ++ix){
+	static unsigned char color2[3];
+	color2[0] = 255.0 * arg_p->count_matrix[iCounter][ix]/50.0;
+	color2[1] = 180;
+	color2[2] = 180;
+	fwrite(color2, 1, 3, fp2);	
+      }
+      iCounter+=1;
+    }
+  
+  }
+  fclose(fp);
+  fclose(fp2);
+
+  pthread_exit(0);
+}
+  
+
+int nbr_threads, size_matrix, pol_degree;
 
 int main (int argc, char * argv[]){
-  int nbr_threads, size_matrix, pol_degree;
-  nbr_threads=check_first_input(argv);
-  size_matrix=check_second_input(argv);
-  pol_degree=check_third_input(argv);
 
+  check_first_input(argv); check_second_input(argv); check_third_input(argv);
   // Allocating space for  different things that needs to be saved.
-  float * cpx_vector = (float*) malloc(sizeof(float) * size_matrix);
-
   // Allocatng a global matrix that can store all the answers from threads. 
-  complex float * answer_pointer = (complex float *) malloc(sizeof(complex float) * size_matrix*size_matrix);
-  complex float ** answer_matrix = (complex float **) malloc(sizeof(complex float) * size_matrix);
+  complex double * answer_pointer =  malloc(sizeof(complex double) * size_matrix*size_matrix);
+  complex double ** answer_matrix =  malloc(sizeof(complex double) * size_matrix);
   for (size_t ix=0, jx=0; ix<size_matrix; ++ix, jx+=size_matrix){
     answer_matrix[ix] = answer_pointer +jx;
   }
 
-  long * count_pointer = (long *) malloc(sizeof(long) * size_matrix*size_matrix);
-  long ** count_matrix = (long **) malloc(sizeof(long) * size_matrix);
+  long * count_pointer = malloc(sizeof(long) * size_matrix*size_matrix);
+  long ** count_matrix = malloc(sizeof(long) * size_matrix);
   for (size_t ix=0, jx=0; ix<size_matrix; ++ix, jx+=size_matrix){
     count_matrix[ix] = count_pointer +jx;
   }
 
-  
   // Creating file name for ppm pictures
-  char fn1[128];  char file_name[] = "newton_convergence_x"; char file_name2[] = "newton_attractors_x";  char fn2[] = ".ppm";
+  char fn1[32]; char file_name[] = "newton_convergence_x"; char file_name2[] = "newton_attractors_x";  char fn2[] = ".ppm";
   strcpy(fn1, argv[3]);  strcat(fn1, fn2);
   strcat(file_name, fn1); strcat(file_name2, fn1);
 
-  // To do here, count start and endpoints
-  int rest = size_matrix % nbr_threads;
-  printf("%d\n", size_matrix/nbr_threads);
-  int start_points[nbr_threads];
   // Creating the strucs args pointer for thread funtion
   struct arg_pointer args[nbr_threads];
+  int * checkJobDone = malloc(sizeof(int) * size_matrix);
+  for (int i=0; i<size_matrix; i++){
+    checkJobDone[i]=0;
+  }
 
+  struct arg_for_printer argPrinter;
+  argPrinter.answer_matrix = answer_matrix;
+  argPrinter.count_matrix = count_matrix;
+  strcpy(argPrinter.file_name,file_name);
+  strcpy(argPrinter.file_name2,file_name2);
+  argPrinter.size_matrix = size_matrix;
+  argPrinter.checkJobDone = checkJobDone;
+  
   // Creating threads for faster computations
   pthread_t tid[nbr_threads];
+  pthread_t tidPrinter;
   pthread_attr_t attr;
   pthread_attr_init(&attr);
 
-  int nbr_calc_thread = size_matrix/nbr_threads;
-  printf("nbr_calc_thread %d\n", nbr_calc_thread);
+  pthread_create(&tidPrinter, &attr, write_to_file, &argPrinter);
+  
+  int nbrCalculationsPerThread = size_matrix/nbr_threads;
   for (int i=0; i<nbr_threads; i++){
     args[i].pol_degree = pol_degree;
     args[i].count_matrix = count_matrix;
     args[i].answer_matrix = answer_matrix;
     args[i].size_matrix = size_matrix;
-  
-    args[i].start_point=i*nbr_calc_thread;
-    args[i].end_point=(i+1)*nbr_calc_thread-1;
+    args[i].checkJobDone = checkJobDone;
+    args[i].start_point=i*nbrCalculationsPerThread;
+    args[i].end_point=(i+1)*nbrCalculationsPerThread-1;
     if ( i+1 == nbr_threads) {
-      args[i].end_point=(i+1)*nbr_calc_thread-1+size_matrix%nbr_threads;
+      args[i].end_point=(i+1)*nbrCalculationsPerThread-1+size_matrix%nbr_threads;
     }
     pthread_create(&tid[i], &attr, newton_thread, &args[i]);
   }
@@ -106,59 +167,74 @@ int main (int argc, char * argv[]){
   for (int i=0; i<nbr_threads; i++){
     pthread_join(tid[i], NULL);
   }
-
-  
-  FILE * fp = fopen(file_name,"wb");
-  (void) fprintf(fp, "P6\n%d %d\n255\n", size_matrix, size_matrix);
-  for (size_t ix=0; ix<size_matrix; ++ix){
-    for (size_t jx=0; jx<size_matrix; ++jx){
-      static unsigned char color[3];
-      color[0] = cabs((1-creal(answer_matrix[ix][jx]))/2.0) * 250.0;
-      color[1] = cabs((1-cimag(answer_matrix[ix][jx]))/2.0) * 250.0;
-      color[2] = cabs((creal(answer_matrix[ix][jx])+cimag(answer_matrix[ix][jx]))/2.0) *250.0;
-      (void) fwrite(color, 1, 3, fp);	
-      }
-  }
-  (void)fclose(fp);
-
+  pthread_join(tidPrinter, NULL);
   
   return 0;
 }
+
+// END OF MAIN FUNCTION
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Function below
 
-int check_first_input(char * argv[]) {
+void check_first_input(char * argv[]) {
   char * input1 = argv[1];
   int nbr_threads;
   if (input1[0] == '-' && input1[1] == 't'){
     nbr_threads = atoi(input1+2);
   }
+  else if ( input1[0] == '-' && input1[1] == 'l'){
+    size_matrix = atoi(input1+2);
+  }
   else {
     printf("Invalid argument passed for number of threads. Please write on the form -t# -l# #.\n");
+    printf("You wrote: %s", argv[1]);
     nbr_threads = 0;
     exit(-1);
   }
-  return nbr_threads;
 }
 
-
-int check_second_input(char * argv[]) {
+void check_second_input(char * argv[]) {
   char * input2 = argv[2];
   int size_matrix;
   if (input2[0] == '-' && input2[1] == 'l'){
     size_matrix = atoi(input2+2);
+  }
+  else if ( input2[0] == '-' && input2[1] == 't'){
+    nbr_threads = atoi(input2+2);
   }
   else {
     printf("Invalid argument passed for matrix size. Please write on the form -t# -l# #.\n");
     size_matrix = 0;
     exit(-1);
   }
-  return size_matrix;
 }
 
-
-int check_third_input(char * argv[]) {
+void check_third_input(char * argv[]) {
   char * input3 = argv[3];
-  int pol_degree;
   if (isdigit(input3[0])==0){
     printf("Invalid argument passed for degree of polynomial. Please write on the form -t# -l# #.\n");
     pol_degree = 0;
@@ -167,11 +243,10 @@ int check_third_input(char * argv[]) {
   else {
     pol_degree = atoi(input3);
   }
-  return pol_degree;
 }
 
-float complex multiplication_complex(float complex complex_nbr, int pol_degree){
-  float complex tmp_complex = complex_nbr;
+double complex multiplication_complex(double complex complex_nbr, int pol_degree){
+  double complex tmp_complex = complex_nbr;
   for (int ix=2; ix <=pol_degree; ++ix){
     complex_nbr = complex_nbr*tmp_complex;
   }
@@ -181,51 +256,48 @@ float complex multiplication_complex(float complex complex_nbr, int pol_degree){
   return complex_nbr;
 }
 
-float complex newtons_method(float complex complex_nbr, int pol_degree, long **matrix_pp, int a, int b) {
-  float p_g = pol_degree;
-  float i = 0.001;
-  float complex polynomial_derivative;
-  float complex polynomial;
-  float divergence_stop = 10000000000;
-  long nbr_iter_tmp = 0;
-  while (nbr_iter_tmp<50000) {
+
+// Newton's method. Calculates the roots and the number of iterations to reach them. 
+double complex newtons_method(double complex complex_nbr, int pol_degree, long **matrix_pp, int a, int b) {
+  double p_g = pol_degree;
+  double i = 0.001;
+  double complex polynomial_derivative;
+  double complex polynomial;
+  double divergence_stop = 10000000000;
+  int nbr_iter_tmp = 0;
+  while (nbr_iter_tmp<10000) {
     nbr_iter_tmp +=1;
     polynomial_derivative = multiplication_complex(complex_nbr, pol_degree-1);
 
     complex_nbr = complex_nbr - complex_nbr/p_g+1.0/(p_g*polynomial_derivative);
 
     polynomial = multiplication_complex(complex_nbr, pol_degree);
-     
-     // check and breaks if values diverging
-    if ((float)cabs(creal(complex_nbr)) > divergence_stop || (float) cabs(cimag(complex_nbr)) > divergence_stop){
+    // if close enough to root, will stop.
+    if (cabs((polynomial-1.0)) < i) {
+      matrix_pp[a][b] = nbr_iter_tmp;
+      break;
+     }
+  
+    
+    // check and breaks if values diverging
+    if (cabs(creal(complex_nbr)) > divergence_stop ||  cabs(cimag(complex_nbr)) > divergence_stop || (cabs(creal(complex_nbr)) < i && cabs(cimag(complex_nbr)) < i)){
       complex_nbr = 0.0 + 0.0*I;
       matrix_pp[a][b] = nbr_iter_tmp;
       break;
      }
+    
      // checks and breaks if it's getting to close to origo.
-    if ((float)cabs(creal(complex_nbr)) < i && (float)cabs(cimag(complex_nbr)) < i) {
+    if (cabs(creal(complex_nbr)) < i && cabs(cimag(complex_nbr)) < i) {
       complex_nbr = 0.0 + 0.0*I;
       matrix_pp[a][b] = nbr_iter_tmp;
       break;
-     }
-     // if close enough to root, will stop.
-    if ((float) cabs((polynomial-1.0)) < i) {
-      matrix_pp[a][b] = nbr_iter_tmp;
-      break;
-     }
+      }
    }
   return complex_nbr;
 }
 
-void generate_cpx_numbers(float * allocated_vector, int size_matrix) {
-  float sm = size_matrix;
-    for (size_t ix=0; ix<size_matrix; ++ix){  
-    float complex element = (4.0*ix/sm-2.0);
-    allocated_vector[ix] = element;
-   }
-  }
 
-void generate_poly_roots(float complex * roots, int pol_degree) {
+void generate_poly_roots(double complex * roots, int pol_degree) {
   for (size_t ix = 0; ix<pol_degree; ++ix){
     
   }
