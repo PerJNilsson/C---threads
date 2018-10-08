@@ -41,7 +41,7 @@ we dont have to use the for-loop to check the value against all roots in every i
 intpow is simply a replacement for the slow pow[]-function, with hardcoded cases to the power of 6 and
 a loop if the exponent would be of a higher order. The newt function will also save which root it converges
 to in a long array (l times l long). It will also save the number of iterations it took to reach a constraint
-(in an l time l long array).
+(in an l times l long array).
 
 Parallell to the newton-calulculating-threads we have a writing-thread. The writing thread will simply
 open two files (one for the attractors, one for convergence) and write the results found in itarr and
@@ -71,7 +71,7 @@ lags, quite large margins for example:
 
 Our way of using threads is probably best when using many threads. First of all picking just one element
 then jump "number of threads" to pick next one isn't optimized. But, by using this strategy and letting each
-thread calculate the each first  element we can make sure that our single writer-thread is able to access the
+thread calculate the first element we can make sure that our single writer-thread is able to access the
 information as early as it is possible. Thus we assume that the bottleneck of our program is writing to ppm-
 files which seems reasonable since we can choose the number of threads who do the newton iteration.
 
