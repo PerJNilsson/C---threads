@@ -31,7 +31,7 @@ integer from 0 to "nr of threads" - 1).
 The newtwrapper function in turn calls the function newt, which performs the newton iterations for a
 single pixel. The wrapper function is designed so that all threads start iterations for the first
 pixels. E.g if the thread has id=3 and the number of threads is 7, thread number 3 will perform
-iterations for pixels 3, 3+7, 3+7*2, 3+7*3, .... This makes it possible for the writer thread to be
+iterations for pixels 3+7x0, 3+7x1, 3+7x2, 3+7x3, .... This makes it possible for the writer thread to be
 the most efficient, because it has to write the pixels in increasing order. After finding a root it
 will also set the corresponding element in "item_done" list to 1.
 
@@ -50,7 +50,7 @@ writing thread will have a while loop that always check if the element in "item_
 1 (default 0). If it is, it will check and write to the ppm files with predefined colors for attractors
 (P3) and a black and white (P2) for convergence.
 
-Our main program then call the funtion pthread_join for all initialized threads which will wait for
+Our main program will then call the funtion pthread_join for all initialized threads which will wait for
 all the threads to finnish before continue down the main fucntion.
 
 Last of all we deallocate the memory previously allocated with the funtion free.
