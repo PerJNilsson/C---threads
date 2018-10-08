@@ -91,4 +91,5 @@ Using fwrite instead of fprintf would perhaps been faster. Another thing that we
 using complex numbers from #include <complex.h> try to allocate and an array with twice the length saving e.g.
 all real numbers at even indices and its corresponding to imagnary at odd indices, and hardcode the multiplication
 between two imaginary numbers (a+bi)(c+di). By doing this we could have skipped all the complex operations
-which is unclear if it's equally fast as using the normal math operations.
+which is unclear if it's equally fast as using the normal math operations. Though a valid point is to think
+that these popular libraries are optimized such that doing whats proposed above would be redundant.
