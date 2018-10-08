@@ -39,9 +39,9 @@ The newt function simply performs newton iteration with the given stop condition
 condition that checks wether the x-value is outside the unit circle + allowed error. By doing this
 we dont have to use the for-loop to check the value against all roots in every iteration. The function
 intpow is simply a replacement for the slow pow[]-function, with hardcoded cases to the power of 6 and
-a loop if the exponed would be of a higher order. The newt function will also save which root it converges
-to in a long array (l times l long). It will also save the number of iterations it took in an l time l
-array, and also save the maximum interation before the function is terminated.
+a loop if the exponent would be of a higher order. The newt function will also save which root it converges
+to in a long array (l times l long). It will also save the number of iterations it took to reach a constraint
+(in an l time l long array).
 
 Parallell to the newton-calulculating-threads we have a writing-thread. The writing thread will simply
 open two files (one for the attractors, one for convergence) and write the results found in itarr and
@@ -87,4 +87,8 @@ of that c is a row-major language.
 More obvious optimizations would be to reduce the size of the ppm-file when the number of lines  is getting
 to big.
 
-Using fwrite instead of fprintf would perhaps been faster.
+Using fwrite instead of fprintf would perhaps been faster. Another thing that we didn't test  was instead of
+using complex numbers from #include <complex.h> try to allocate and an array with twice the length saving e.g.
+all real numbers at even indices and its corresponding to imagnary at odd indices, and hardcode the multiplication
+between two imaginary numbers (a+bi)(c+di). By doing this we could have skipped all the complex operations
+which is unclear if it's equally fast as using the normal math operations.
