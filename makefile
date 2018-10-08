@@ -23,4 +23,4 @@ compress : compress
 	@mkdir newtondir; cp threads.c newtondir; cp makefile newtondir; cp report.md newtondir;\
 	cd newtondir && tar czvf ../newtondir.tar.gz . && cd -
 clean : clean
-	@rm -rf newton; rm -rf newtondir;
+	@rm -rf newton; rm -rf newtondir; rm -rf extracted; rm -rf pictures; rm -rf reports;
