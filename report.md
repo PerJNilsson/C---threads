@@ -38,7 +38,7 @@ will also set the corresponding element in "item_done" list to 1.
 The newt function simply performs newton iteration with the given stop conditions. We added a
 condition that checks wether the x-value is outside the unit circle + allowed error. By doing this
 we don't have to use the for-loop to check the value against all roots in every iteration. The function
-intpow is simply a replacement for the slow pow[]-function, with hard coded cases to the power of 6 and
+intpow is simply a replacement for the slow pow()-function, with hard coded cases to the power of 6 and
 a loop if the exponent would be of a higher order. The newt function will also save which root it converges
 to in a long array (l times l long). It will also save the number of iterations it took to reach a constraint
 (in an l times l long array).
@@ -61,13 +61,11 @@ Our performance was quite good, if we are to compare to the performance goals. W
 lags, quite large margins for example:
 
 |  Arguments   | Our result | Perf. goal|
------------------------------------------
--t1 -l1000 1   | 0.159 s    | 1.01 s    |
------------------------------------------
--t10 -l50000 7 | 415.15 s   | 594 s     |
------------------------------------------
--t4 -l1000 5   | 0.167 s    | 0.42 s    |
------------------------------------------
+|--------------|------------|-----------|
+|-t1 -l1000 1   | 0.159 s    | 1.01 s    |
+|-t10 -l50000 7 | 415.15 s   | 594 s     |
+|-t4 -l1000 5   | 0.167 s    | 0.42 s    |
+
 
 Our way of using threads is probably best when using many threads. First of all picking just one element
 then jump "number of threads" to pick next one isn't optimized. But, by using this strategy and letting each
@@ -88,7 +86,7 @@ More obvious optimizations would be to reduce the size of the ppm-file when the 
 too big.
 
 Using fwrite instead of fprintf would perhaps been faster. Another thing that we didn't test  was instead of
-using complex numbers from #include <complex.h> try to allocate and an array with twice the length saving e.g.
+using complex numbers from complex.h try to allocate and an array with twice the length saving e.g.
 all real numbers at even indices and its corresponding to imaginary at odd indices, and hard code the multiplication
 between two imaginary numbers (a+bi)(c+di). By doing this we could have skipped all the complex operations
 which is unclear if it's equally fast as using the normal math operations. Though a valid point is to think
