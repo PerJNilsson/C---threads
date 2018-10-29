@@ -168,7 +168,7 @@ void *newtwrapper(void * arg){
   for(size_t i = thread_id; i<(size*size); i+=nr_threads){
     row = i/size;
     col = i%size;
-    x0 = max-row*interval+I*(min+col*interval);
+    x0 = min+col*interval+I*(max-row*interval);
     newt(i, x0);
     items_done[i] = 1;
   }
