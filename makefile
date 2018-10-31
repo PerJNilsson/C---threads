@@ -1,14 +1,16 @@
-.PHONY : all
+all:	newton
 
-all : gcc run failtest
+newton:	newton.c
+	gcc -o newton newton.c -O2 -march=haswell -std=c11 -lm -pthread
 
-gcc : gcc
-	@gcc -o threads threads.c -O2
+maketar:
+	tar -cvf hpcg031.tar.gz newton.c makefile report.md
 
-run : run
-	@echo "inputs are -t1 -l1000 8"; \
-	./threads -t1 -l1000 8
+test:
+	/home/hpc2018/a2_grading/check_submission.py hpcg031.tar.gz
 
-failtest : failtest
-	@echo "inputs are -t100 aaaa8000 b"; \
-	./threads -t100 aaa8000 b
+cleantest:
+	rm -rf hpcg031.tar.gz extracted pictures reports
+
+clean:
+	-rm newton
