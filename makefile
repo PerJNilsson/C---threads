@@ -1,7 +1,7 @@
 all:	newton
 
 newton:	newton.c
-	gcc -o newton newton.c -O2 -march=haswell -std=c11 -lm -pthread
+	gcc -o newton newton.c -O2 -std=c11 -lm -pthread
 
 maketar:
 	tar -cvf hpcg031.tar.gz newton.c makefile report.md
@@ -13,4 +13,4 @@ cleantest:
 	rm -rf hpcg031.tar.gz extracted pictures reports
 
 clean:
-	-rm newton
+	-rm -rf newton
