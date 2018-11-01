@@ -6,6 +6,7 @@ We got the feedback that our image was turned. By going through our code we noti
 mixed up the real and imaginary part. The only changes we made is the one below. 
 
 Code before changes:
+
 ~~~
 x0 = max-row*interval+I*(min+col*interval);
 ~~~
