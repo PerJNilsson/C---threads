@@ -81,18 +81,22 @@ int main(int argc, char *argv[]){
 
 double complex intpow(double complex x){
 
-  double complex result = 1;    
+  double complex result = 1;
+  double complex tmp;
   
   switch(exponent){    
 
   case 6 :
-    return x*x*x*x*x*x;
+    tmp = x*x*x;
+    return tmp*tmp;
     
   case 5 :
-    return x*x*x*x*x;
+    tmp = x*x;
+    return tmp*tmp*x;
   
   case 4 :
-    return x*x*x*x;
+    tmp = x*x;
+    return tmp*tmp;
 
   case 3 :
     return x*x*x;
@@ -180,25 +184,32 @@ void *newtwrapper(void * arg){
 
 void *writeppm(void * arg){
   
-  char colors[17][12] = {
-    "000 000 000",
-    "001 000 103",
-    "213 255 000",
-    "255 000 086",
-    "158 000 142",
-    "014 076 161",
-    "255 229 002",
-    "000 095 057",
-    "000 255 000",
-    "149 000 058",
-    "255 147 126",
-    "164 036 000",
-    "000 021 068",
-    "145 208 203",
-    "098 014 000",
-    "107 104 130",
-    "000 000 255",
+  char colors[17][13] = {
+    "000 000 000 ",
+    "001 000 103 ",
+    "213 255 000 ",
+    "255 000 086 ",
+    "158 000 142 ",
+    "014 076 161 ",
+    "000 095 057 ",
+    "000 255 000 ",
+    "149 000 058 ",
+    "255 147 126 ",
+    "164 036 000 ",
+    "000 021 068 ",
+    "255 229 002 ",
+    "145 208 203 ",
+    "098 014 000 ",
+    "107 104 130 ",
+    "000 000 255 ",
   };
+  
+  size_t max_number = 9999;
+  char number_strings[9999][6];
+
+  for(size_t i=0; i<max_number; i++){
+    sprintf(number_strings[i],"%d ",i);
+  }
   
   //OPEN FILES
   char filename_conv[26];
@@ -221,14 +232,16 @@ void *writeppm(void * arg){
   while(i<(size*size)){
 
     if(items_done[i]!=0){
+      
 
       if(i%size==0){
-        (void) fprintf(fp_conv, "\n");
-        (void) fprintf(fp_atr, "\n");
+        fwrite("\n",1,strlen("\n"), fp_atr);
+        fwrite("\n",1,strlen("\n"), fp_conv);
       }   
 
-      (void) fprintf(fp_conv, "%d ", itarr[i]);
-      (void) fprintf(fp_atr, "%s   ", colors[carr[i]%17]);
+      fwrite(colors[carr[i]%17], 1, strlen(colors[carr[i]%17]), fp_atr);
+      fwrite(number_strings[itarr[i]], 1, strlen(number_strings[itarr[i]]), fp_conv);
+
       ++i;
     } else {
       nanosleep(&ts,NULL);
