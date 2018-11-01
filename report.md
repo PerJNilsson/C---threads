@@ -1,5 +1,24 @@
 # Assignment report on multithreading
 
+## Comments about resubmission
+
+We got the feedback that our image was turned. By going through our code we noticed that we'd
+mixed up the real and imaginary part. The only changes we made is the one below. 
+
+Code before changes:
+~~~
+x0 = max-row*interval+I*(min+col*interval);
+~~~
+
+Code after changes:
+
+~~~
+x0 = min+col*interval+I*(max-row*interval);
+~~~
+
+Which made the picture turn such that is looks like the ones on the course home page.
+
+
 ## Program layout
 
 The program consists of a main function and several additional functions in a single file called
