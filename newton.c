@@ -39,7 +39,6 @@ int main(int argc, char *argv[]){
   }
   
   exponent = d-1;
-  
   //create threads
   pthread_t threads[nr_threads];
   pthread_t write_thread;
@@ -55,6 +54,7 @@ int main(int argc, char *argv[]){
   carr = (int*) malloc(sizeof(int) * size*size);
   items_done = (int*) calloc(size*size, sizeof(int));  
 
+  pthread_create(&write_thread, NULL, writeppm, NULL); 
 
 
   int args[nr_threads];
@@ -62,13 +62,15 @@ int main(int argc, char *argv[]){
     args[ix] = ix;
     pthread_create(&threads[ix], NULL, newtwrapper,(void*) &args[ix]);
   }
-  pthread_create(&write_thread, NULL, writeppm, NULL); 
 
+  
   for(size_t ix=0; ix<nr_threads; ++ix){
     pthread_join(threads[ix], NULL);
   }
+  
   pthread_join(write_thread, NULL);
-
+  
+  
   free(carr);
   free(itarr);
   free(items_done);
@@ -253,4 +255,3 @@ void *writeppm(void * arg){
   
   return NULL;
 }
-
