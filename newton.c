@@ -205,7 +205,7 @@ void *writeppm(void * arg){
   };
   
   size_t max_number = 9999;
-  char number_strings[9999][6];
+  char number_strings[max_number][6];
 
   for(size_t i=0; i<max_number; i++){
     sprintf(number_strings[i],"%d ",i);
