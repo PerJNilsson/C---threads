@@ -19,9 +19,10 @@ x0 = min+col*interval+I*(max-row*interval);
 
 Which made the picture turn such that is looks like the ones on the course home page.
 
-We also changed from using fprintf to fwrite, which made the program considerably faster. The code
-was as much as two times faster for many of the parameter sets. The new benchmarks are given in the
-table below.
+Even though our program already was fast enough to meet the performance requirements, we also
+changed from using fprintf to fwrite. This made the program considerably faster. The code is as
+much as two times faster for many of the parameter sets. The new benchmarks are given in the table
+below.
 
 
 ## Program layout
