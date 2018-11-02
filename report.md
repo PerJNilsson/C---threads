@@ -1,4 +1,4 @@
-# Assignment report on multithreading
+# Assignment report on multithreading, hpcgp031
 
 ## Comments about resubmission
 
